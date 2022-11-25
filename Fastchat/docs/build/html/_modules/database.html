@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>database &mdash; FastChat  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> FastChat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Fastchat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">FastChat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">Module code</a> &raquo;</li>
+      <li>database</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for database</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">mysql.connector</span>
+<span class="sd">&quot;&quot;&quot;Connecting to the database in localhost of server</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">connection</span> <span class="o">=</span> <span class="n">mysql</span><span class="o">.</span><span class="n">connector</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
+    <span class="n">user</span><span class="o">=</span><span class="s1">&#39;dvp&#39;</span><span class="p">,</span>
+    <span class="n">password</span><span class="o">=</span><span class="s1">&#39;Idvp@048&#39;</span><span class="p">,</span>
+    <span class="n">database</span><span class="o">=</span><span class="s1">&#39;myTestDB&#39;</span>
+<span class="p">)</span>
+<span class="n">cursor</span><span class="o">=</span><span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+
+
+<span class="c1">#cursor.execute(&quot;DROP TABLE IF EXISTS CREDENTIALS&quot;)</span>
+<span class="c1"># cursor.execute(&#39;&#39;&#39;CREATE TABLE CREDENTIALS</span>
+<span class="c1">#          (NAME TEXT ,</span>
+<span class="c1">#          PASSWORD TEXT,</span>
+<span class="c1">#          ONLINE INT,</span>
+<span class="c1">#          PUBLIC_KEY BLOB,</span>
+<span class="c1">#          PRIVATE_KEY BLOB);&#39;&#39;&#39;)</span>
+
+<div class="viewcode-block" id="find_user"><a class="viewcode-back" href="../database.html#database.find_user">[docs]</a><span class="k">def</span> <span class="nf">find_user</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function checks whether a user&#39;s details are already available in the database</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        l (list): Contains ID, Password user entered</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: 0 for no user name,1 for wrong password,2 for succesfull login</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT EXISTS(SELECT * from CREDENTIALS WHERE NAME=&#39;</span><span class="si">%s</span><span class="s2">&#39;)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">foundname</span><span class="o">=</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">foundname</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT EXISTS(SELECT * from CREDENTIALS WHERE NAME=&#39;</span><span class="si">%s</span><span class="s2">&#39; AND PASSWORD=&#39;</span><span class="si">%s</span><span class="s2">&#39;)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">foundpassword</span><span class="o">=</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">foundpassword</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="mi">2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+    
+    
+<div class="viewcode-block" id="insert_user"><a class="viewcode-back" href="../database.html#database.insert_user">[docs]</a><span class="k">def</span> <span class="nf">insert_user</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Inserts User Credentials to our Shared database.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        l (list): Contains ID, Password and Public Key of user</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="s2">&quot;INSERT INTO CREDENTIALS (NAME,PASSWORD,ONLINE,PUBLIC_KEY,PRIVATE_KEY) VALUES (</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">)&quot;</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="n">create_table_newuser</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+    
+<div class="viewcode-block" id="get_all_names"><a class="viewcode-back" href="../database.html#database.get_all_names">[docs]</a><span class="k">def</span> <span class="nf">get_all_names</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;To get all users from database</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: List of all users signed up till now</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT NAME FROM CREDENTIALS&quot;</span><span class="p">)</span>
+    <span class="n">names</span><span class="o">=</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="n">n</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">n</span></div>
+
+
+<div class="viewcode-block" id="check_status"><a class="viewcode-back" href="../database.html#database.check_status">[docs]</a><span class="k">def</span> <span class="nf">check_status</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check online status of a user</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (string): Username for which status is checked</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: 0 if offline, 1 if user is online</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT ONLINE FROM CREDENTIALS WHERE NAME=&#39;</span><span class="si">%s</span><span class="s2">&#39; &quot;</span><span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span></div>
+    
+<div class="viewcode-block" id="update_status"><a class="viewcode-back" href="../database.html#database.update_status">[docs]</a><span class="k">def</span> <span class="nf">update_status</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Update online status of a user</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        l (string): Username of user</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT ONLINE FROM CREDENTIALS WHERE NAME=&#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">l</span><span class="p">))</span>
+    <span class="n">c</span><span class="o">=</span><span class="mi">1</span><span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;UPDATE CREDENTIALS SET ONLINE = </span><span class="si">%s</span><span class="s2"> WHERE NAME =&#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span><span class="o">%</span> <span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">l</span><span class="p">))</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+    
+<div class="viewcode-block" id="recvPubKey"><a class="viewcode-back" href="../database.html#database.recvPubKey">[docs]</a><span class="k">def</span> <span class="nf">recvPubKey</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Gets Public encryption of user</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (string): Username of user</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bytes: public key of user</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT PUBLIC_KEY FROM CREDENTIALS WHERE NAME=&#39;</span><span class="si">%s</span><span class="s2">&#39; &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">))</span>
+    <span class="n">key</span>  <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="c1">#print(key)</span>
+    <span class="k">return</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="recvPrivKey"><a class="viewcode-back" href="../database.html#database.recvPrivKey">[docs]</a><span class="k">def</span> <span class="nf">recvPrivKey</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Gets Private encryption of user</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (string): Username of user</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bytes: private key of user</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT PRIVATE_KEY FROM CREDENTIALS WHERE NAME=&#39;</span><span class="si">%s</span><span class="s2">&#39; &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">))</span>
+    <span class="n">key</span>  <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="c1">#print(key)</span>
+    <span class="k">return</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="create_table_newuser"><a class="viewcode-back" href="../database.html#database.create_table_newuser">[docs]</a><span class="k">def</span> <span class="nf">create_table_newuser</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a new table for user chat history.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (string): Username of user</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;CREATE TABLE </span><span class="si">%s</span><span class="s1"></span>
+<span class="s1">         (SENDER TEXT,</span>
+<span class="s1">          MESSAGE BLOB,</span>
+<span class="s1">          SENT INT);&#39;&#39;&#39;</span><span class="o">%</span> <span class="n">name</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="store_offline_msg"><a class="viewcode-back" href="../database.html#database.store_offline_msg">[docs]</a><span class="k">def</span> <span class="nf">store_offline_msg</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">sender</span><span class="p">,</span><span class="n">msg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stores offline messages to be sent to the user</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (string): Username of user to whom message is to be sent</span>
+<span class="sd">        sender (string): Username of user who sent the message</span>
+<span class="sd">        msg (bytes): Encrypted message</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">state</span><span class="o">=</span><span class="s2">&quot;INSERT INTO &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot; (SENDER,MESSAGE,SENT) VALUES (</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">)&quot;</span>
+    <span class="n">value</span><span class="o">=</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span><span class="n">msg</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">state</span><span class="p">,</span><span class="n">value</span><span class="p">)</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="n">update_chat_history</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="store_msg"><a class="viewcode-back" href="../database.html#database.store_msg">[docs]</a><span class="k">def</span> <span class="nf">store_msg</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">sender</span><span class="p">,</span><span class="n">msg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Store message in the chat history</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (string): Username of user to whom message is to be sent</span>
+<span class="sd">        sender (string): Username of user who sent the message</span>
+<span class="sd">        msg (bytes): Encrypted message</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">state</span><span class="o">=</span><span class="s2">&quot;INSERT INTO &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot; (SENDER,MESSAGE,SENT) VALUES (</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">)&quot;</span>
+    <span class="n">value</span><span class="o">=</span><span class="p">(</span><span class="n">sender</span><span class="p">,</span><span class="n">msg</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">state</span><span class="p">,</span><span class="n">value</span><span class="p">)</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="n">update_chat_history</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="offline_msgs"><a class="viewcode-back" href="../database.html#database.offline_msgs">[docs]</a><span class="k">def</span> <span class="nf">offline_msgs</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Gets all offline messages stored</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (string): Username of user</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: list of tuples of encrypted unsent messages</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT SENDER,MESSAGE FROM &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot; WHERE SENT=&#39;0&#39;&quot;</span><span class="p">)</span>
+    <span class="n">L</span><span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;UPDATE &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot; SET SENT=&#39;1&#39;&quot;</span><span class="p">)</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">L</span></div>
+
+<div class="viewcode-block" id="create_grp"><a class="viewcode-back" href="../database.html#database.create_grp">[docs]</a><span class="k">def</span> <span class="nf">create_grp</span><span class="p">(</span><span class="n">grp_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a new group table</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        grp_name (string): Name of group table.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name1</span><span class="o">=</span><span class="n">grp_name</span><span class="o">+</span><span class="s2">&quot;_participants&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;CREATE TABLE </span><span class="si">%s</span><span class="s1"></span>
+<span class="s1">         (NAME TEXT);&#39;&#39;&#39;</span><span class="o">%</span> <span class="n">name1</span><span class="p">)</span>
+    <span class="n">name2</span><span class="o">=</span><span class="n">grp_name</span><span class="o">+</span><span class="s2">&quot;_chats&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;CREATE TABLE </span><span class="si">%s</span><span class="s1"></span>
+<span class="s1">         (NAME TEXT,</span>
+<span class="s1">         MESSAGE BLOB);&#39;&#39;&#39;</span><span class="o">%</span> <span class="n">name2</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="get_participants"><a class="viewcode-back" href="../database.html#database.get_participants">[docs]</a><span class="k">def</span> <span class="nf">get_participants</span><span class="p">(</span><span class="n">grp_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get participants of a group</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">       grp_name (string): Name of group table.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: list of participants</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span><span class="o">=</span><span class="n">grp_name</span><span class="o">+</span><span class="s2">&quot;_participants&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT NAME FROM &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">L</span><span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="n">r</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">L</span><span class="p">:</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">r</span></div>
+
+<div class="viewcode-block" id="add_participant"><a class="viewcode-back" href="../database.html#database.add_participant">[docs]</a><span class="k">def</span> <span class="nf">add_participant</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">grp_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Add participants to a group</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (string): Username of participant</span>
+<span class="sd">        grp_name (string): Name of group table.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n1</span><span class="o">=</span><span class="n">grp_name</span><span class="o">+</span><span class="s2">&quot;_participants&quot;</span>
+    <span class="n">state</span><span class="o">=</span><span class="s2">&quot;INSERT INTO &quot;</span><span class="o">+</span><span class="n">n1</span><span class="o">+</span><span class="s2">&quot; (NAME) VALUES (</span><span class="si">%s</span><span class="s2">)&quot;</span>
+    <span class="n">l</span><span class="o">=</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+    <span class="n">value</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">state</span><span class="p">,</span><span class="n">value</span><span class="p">)</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="history_user"><a class="viewcode-back" href="../database.html#database.history_user">[docs]</a><span class="k">def</span> <span class="nf">history_user</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Gets history of a user</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (string): Username of the user</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: list of tuples of encrypted unsent messages</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT SENDER,MESSAGE FROM &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">=</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">r</span></div>
+   
+<div class="viewcode-block" id="store_grp_chat"><a class="viewcode-back" href="../database.html#database.store_grp_chat">[docs]</a><span class="k">def</span> <span class="nf">store_grp_chat</span><span class="p">(</span><span class="n">grp_name</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">msg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stores group history</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        grp_name (string): Name of group table.</span>
+<span class="sd">        name (string): Username of the user</span>
+<span class="sd">        msg (bytes): Encrypted message</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n1</span><span class="o">=</span><span class="n">grp_name</span><span class="o">+</span><span class="s2">&quot;_chats&quot;</span>
+    <span class="n">state</span><span class="o">=</span><span class="s2">&quot;INSERT INTO &quot;</span><span class="o">+</span><span class="n">n1</span><span class="o">+</span><span class="s2">&quot; (NAME,MESSAGE) VALUES (</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">)&quot;</span>
+    <span class="n">l</span><span class="o">=</span><span class="p">[</span><span class="n">name</span><span class="p">,</span><span class="n">msg</span><span class="p">]</span>
+    <span class="n">value</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">state</span><span class="p">,</span><span class="n">value</span><span class="p">)</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="n">update_chat_history</span><span class="p">(</span><span class="n">grp_name</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="grp_history"><a class="viewcode-back" href="../database.html#database.grp_history">[docs]</a><span class="k">def</span> <span class="nf">grp_history</span><span class="p">(</span><span class="n">grpname</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Gets history of a group</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        grp_name (string): Name of group table.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: list of tuples of encrypted unsent messages</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n1</span><span class="o">=</span><span class="n">grpname</span><span class="o">+</span><span class="s2">&quot;_chats&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM &quot;</span><span class="o">+</span><span class="n">n1</span><span class="o">+</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">=</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">r</span></div>
+
+<div class="viewcode-block" id="online_users"><a class="viewcode-back" href="../database.html#database.online_users">[docs]</a><span class="k">def</span> <span class="nf">online_users</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Gets available online users</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: list of participants</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT NAME FROM CREDENTIALS WHERE ONLINE=&#39;1&#39;&quot;</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">=</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="n">l</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+        <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">l</span></div>
+
+<div class="viewcode-block" id="no_of_msgs"><a class="viewcode-back" href="../database.html#database.no_of_msgs">[docs]</a><span class="k">def</span> <span class="nf">no_of_msgs</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Number of messages stored</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (string): Name of table</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT COUNT(*) FROM &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="update_chat_history"><a class="viewcode-back" href="../database.html#database.update_chat_history">[docs]</a><span class="k">def</span> <span class="nf">update_chat_history</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deleting old chat records and adding new records</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name (string): Name of table</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: returns list of chat records</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">no_of_msgs</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">:</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;DELETE FROM &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot; LIMIT 1&quot;</span><span class="p">)</span>
+        <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="grp_names"><a class="viewcode-back" href="../database.html#database.grp_names">[docs]</a><span class="k">def</span> <span class="nf">grp_names</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Gets all groups names</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: list of group names</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT NAME FROM CREDENTIALS WHERE ONLINE=&#39;2&#39;&quot;</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">=</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="n">l</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+        <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">l</span></div>
+    
+<div class="viewcode-block" id="available_users"><a class="viewcode-back" href="../database.html#database.available_users">[docs]</a><span class="k">def</span> <span class="nf">available_users</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Gets all user names signed up to the server</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: list of usernames</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT NAME FROM CREDENTIALS&quot;</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">=</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="n">l</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+        <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">l</span></div>
+
+<div class="viewcode-block" id="members"><a class="viewcode-back" href="../database.html#database.members">[docs]</a><span class="k">def</span> <span class="nf">members</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Gets all user names signed up to the server</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">                list: list of usernames</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT NAME FROM CREDENTIALS WHERE NOT ONLINE=&#39;2&#39;&quot;</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">=</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    <span class="n">l</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+        <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">l</span></div>
+    
+<div class="viewcode-block" id="clients_s1"><a class="viewcode-back" href="../database.html#database.clients_s1">[docs]</a><span class="k">def</span> <span class="nf">clients_s1</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Gets all clients connected to server 1</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: list of usernames of clients</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT SERVER_1 FROM CLIENTS&quot;</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">=</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">s</span></div>
+<div class="viewcode-block" id="clients_s2"><a class="viewcode-back" href="../database.html#database.clients_s2">[docs]</a><span class="k">def</span> <span class="nf">clients_s2</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Gets all clients connected to server 2</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: list of usernames of clients</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT SERVER_2 FROM CLIENTS&quot;</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">=</span><span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">s</span></div>
+<div class="viewcode-block" id="change_clients_s1"><a class="viewcode-back" href="../database.html#database.change_clients_s1">[docs]</a><span class="k">def</span> <span class="nf">change_clients_s1</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Connects client information to server 1</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        a (int): changing load</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">a</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;UPDATE CLIENTS SET SERVER_1=SERVER_1+</span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span> <span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+<div class="viewcode-block" id="change_clients_s2"><a class="viewcode-back" href="../database.html#database.change_clients_s2">[docs]</a><span class="k">def</span> <span class="nf">change_clients_s2</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Connects client information to server 2</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        a (int): changing load</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;UPDATE CLIENTS SET SERVER_2=SERVER_2+</span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+<span class="c1"># print(grp_names())</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, 210050048,210050069,210050096.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

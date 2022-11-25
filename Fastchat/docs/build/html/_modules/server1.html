@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>server1 &mdash; FastChat  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> FastChat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Fastchat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">FastChat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">Module code</a> &raquo;</li>
+      <li>server1</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for server1</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="n">host</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+<span class="n">port</span> <span class="o">=</span> <span class="mi">5555</span>
+<span class="n">port_server</span><span class="o">=</span><span class="mi">5557</span>
+<span class="kn">import</span> <span class="nn">rsa</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">insert_user</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">update_status</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">check_status</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">store_msg</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">store_offline_msg</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">offline_msgs</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">get_participants</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">add_participant</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">create_grp</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">history_user</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">store_grp_chat</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">grp_history</span>
+<span class="c1"># Starting Server</span>
+<span class="c1"># server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span>
+<span class="c1"># server.bind((host, port))</span>
+<span class="c1"># server.listen()</span>
+<span class="c1"># s1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span>
+<span class="c1"># s1.bind((host, port_server))</span>
+<span class="c1"># s1.listen(1)</span>
+<span class="c1"># cli,add=s1.accept()</span>
+<span class="c1"># Lists For Clients and Their Nicknames</span>
+<span class="n">Dict</span><span class="o">=</span><span class="p">{}</span>
+<span class="n">name_of_rec</span><span class="o">=</span><span class="p">{}</span>
+<span class="n">a</span><span class="o">=</span><span class="p">{}</span>
+
+<div class="viewcode-block" id="server_recv"><a class="viewcode-back" href="../server1.html#server1.server_recv">[docs]</a><span class="k">def</span> <span class="nf">server_recv</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;This function receives images sent by client to the server</span>
+<span class="sd">    </span>
+<span class="sd">     reads chunks of size 1024 bytes at a time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">msg</span><span class="o">=</span><span class="n">cli</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+        <span class="n">message</span><span class="o">=</span><span class="nb">eval</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+        <span class="k">if</span> <span class="s2">&quot;Image&quot;</span> <span class="ow">in</span> <span class="n">message</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">receiver</span><span class="o">=</span><span class="n">message</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">new_msg_info</span><span class="o">=</span><span class="nb">str</span><span class="p">([</span><span class="n">message</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">message</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">message</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+            <span class="n">Dict</span><span class="p">[</span><span class="n">receiver</span><span class="p">]</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">new_msg_info</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+            <span class="n">img_cpy</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">img</span> <span class="o">=</span> <span class="n">cli</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">img</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;%Image_Sent%&quot;</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="n">Dict</span><span class="p">[</span><span class="n">receiver</span><span class="p">]</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+                <span class="n">img_cpy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>               
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+            <span class="n">Dict</span><span class="p">[</span><span class="n">receiver</span><span class="p">]</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;%Image_Sent%&quot;</span><span class="p">)</span>
+            <span class="n">img_cpy</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>      
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_msg</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="n">Dict</span><span class="p">[</span><span class="n">message</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">new_msg</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span></div>
+<div class="viewcode-block" id="DM"><a class="viewcode-back" href="../server1.html#server1.DM">[docs]</a><span class="k">def</span> <span class="nf">DM</span><span class="p">(</span><span class="n">msg_info</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This handle&#39;s the DM text messages to be sent from server to a client in encrypted form</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        msg_info (list): contains receiver username and encrypted message to be sent</span>
+<span class="sd">        name (string): Username of receiver</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_msg_info</span><span class="o">=</span><span class="nb">str</span><span class="p">([</span><span class="s2">&quot;DM&quot;</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+    <span class="n">receiver</span><span class="o">=</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">store_msg</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="s2">&quot;YOU&quot;</span><span class="o">+</span><span class="s2">&quot;-&quot;</span><span class="o">+</span><span class="n">receiver</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">check_status</span><span class="p">(</span><span class="n">receiver</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">receiver</span> <span class="ow">in</span> <span class="n">Dict</span><span class="p">:</span>
+            <span class="n">Dict</span><span class="p">[</span><span class="n">receiver</span><span class="p">]</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">new_msg_info</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">msg</span><span class="o">=</span><span class="nb">str</span><span class="p">([</span><span class="n">receiver</span><span class="p">,</span><span class="s2">&quot;DM&quot;</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+            <span class="n">cli</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="n">store_msg</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">store_offline_msg</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span></div>
+            
+<div class="viewcode-block" id="DM_IMG"><a class="viewcode-back" href="../server1.html#server1.DM_IMG">[docs]</a><span class="k">def</span> <span class="nf">DM_IMG</span><span class="p">(</span><span class="n">msg_info</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">client</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This handle&#39;s the DM images to be sent from server to a client</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        msg_info (list): contains Keyword and name of sender</span>
+<span class="sd">        client (socket): socket object of client who sent the request</span>
+<span class="sd">        name (string): Username of receiver</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">receiver</span><span class="o">=</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1">#sz = int(msg_info[0][5:])</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">check_status</span><span class="p">(</span><span class="n">receiver</span><span class="p">)):</span>
+            <span class="n">new_msg_info</span><span class="o">=</span><span class="nb">str</span><span class="p">([</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">name</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+            <span class="k">if</span> <span class="n">receiver</span> <span class="ow">in</span> <span class="n">Dict</span><span class="p">:</span>
+                <span class="n">Dict</span><span class="p">[</span><span class="n">receiver</span><span class="p">]</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">new_msg_info</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+                <span class="n">img_cpy</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+                <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">img</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">img</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;%Image_Sent%&quot;</span><span class="p">:</span>
+                        <span class="k">break</span>
+                    <span class="n">Dict</span><span class="p">[</span><span class="n">receiver</span><span class="p">]</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+                    <span class="n">img_cpy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+                <span class="n">Dict</span><span class="p">[</span><span class="n">receiver</span><span class="p">]</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;%Image_Sent%&quot;</span><span class="p">)</span>
+                <span class="n">img_cpy</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg</span><span class="o">=</span><span class="nb">str</span><span class="p">([</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">name</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">receiver</span><span class="p">])</span>
+                <span class="n">cli</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+                <span class="n">img_cpy</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+                <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">img</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">img</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;%Image_Sent%&quot;</span><span class="p">:</span>
+                        <span class="k">break</span>
+                    <span class="n">cli</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+                    <span class="n">img_cpy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+                <span class="n">cli</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;%Image_Sent%&quot;</span><span class="p">)</span>
+                <span class="n">img_cpy</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                
+    <span class="k">else</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">img</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">img</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;%Image_Sent%&quot;</span><span class="p">:</span>
+                    <span class="k">break</span></div>
+        
+<div class="viewcode-block" id="GRP"><a class="viewcode-back" href="../server1.html#server1.GRP">[docs]</a><span class="k">def</span> <span class="nf">GRP</span><span class="p">(</span><span class="n">msg_info</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function sends the message sent by a user to all participants of group</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        msg_info (list): contains Keyword and name of sender</span>
+<span class="sd">        name (string): Name of the group</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sender</span><span class="o">=</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot;@&quot;</span><span class="o">+</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">new_msg_info</span><span class="o">=</span><span class="nb">str</span><span class="p">([</span><span class="s2">&quot;GRP&quot;</span><span class="p">,</span><span class="n">sender</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+    <span class="n">group_members</span><span class="o">=</span><span class="n">get_participants</span><span class="p">(</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">group_members</span><span class="p">:</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">i</span><span class="o">==</span><span class="n">name</span><span class="p">):</span>
+            <span class="n">store_msg</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">sender</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">check_status</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+            <span class="n">store_msg</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">sender</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Dict</span><span class="p">:</span>
+                <span class="n">Dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">new_msg_info</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg</span><span class="o">=</span><span class="nb">str</span><span class="p">([</span><span class="n">i</span><span class="p">,</span><span class="s2">&quot;GRP&quot;</span><span class="p">,</span><span class="n">sender</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+                <span class="n">cli</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">store_offline_msg</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">sender</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">store_grp_chat</span><span class="p">(</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">name</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="handle"><a class="viewcode-back" href="../server1.html#server1.handle">[docs]</a><span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="n">client</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This is main function of server.</span>
+
+<span class="sd">    It handles all the requests made by client to the server.</span>
+
+<span class="sd">    This splits the task of handling requests to different functions based on the type of requests.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        client (socket): socket object of client who sent the request</span>
+<span class="sd">        name (string): Username of receiver</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">message</span><span class="p">:</span>
+                <span class="n">update_status</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg_info</span><span class="o">=</span><span class="nb">eval</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+                <span class="k">if</span> <span class="s2">&quot;Image&quot;</span> <span class="ow">in</span> <span class="n">msg_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">DM_IMG</span><span class="p">(</span><span class="n">msg_info</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">client</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">msg_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;DM&quot;</span><span class="p">:</span>
+                    <span class="n">DM</span><span class="p">(</span><span class="n">msg_info</span><span class="p">,</span><span class="n">name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">msg_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;GRP&quot;</span><span class="p">:</span>
+                    <span class="n">GRP</span><span class="p">(</span><span class="n">msg_info</span><span class="p">,</span><span class="n">name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">msg_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;CREATE&quot;</span><span class="p">:</span>
+                    <span class="n">create_grp</span><span class="p">(</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">pubKey</span><span class="p">,</span> <span class="n">privKey</span> <span class="o">=</span> <span class="n">rsa</span><span class="o">.</span><span class="n">newkeys</span><span class="p">(</span><span class="mi">512</span><span class="p">)</span>
+                    <span class="n">insert_user</span><span class="p">([</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="s2">&quot;GROUP&quot;</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">pubKey</span><span class="o">.</span><span class="n">save_pkcs1</span><span class="p">(</span><span class="s2">&quot;PEM&quot;</span><span class="p">),</span><span class="n">privKey</span><span class="o">.</span><span class="n">save_pkcs1</span><span class="p">(</span><span class="s2">&quot;PEM&quot;</span><span class="p">)])</span>
+                    <span class="n">add_participant</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">msg_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;ADD&quot;</span><span class="p">:</span>
+                    <span class="n">add_participant</span><span class="p">(</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">msg_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;HIS&quot;</span><span class="p">:</span>
+                    <span class="n">msgs</span><span class="o">=</span><span class="n">history_user</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                    <span class="n">new_msg_info</span><span class="o">=</span><span class="nb">str</span><span class="p">([</span><span class="s2">&quot;HIS&quot;</span><span class="p">,</span><span class="n">msgs</span><span class="p">])</span>
+                    <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">new_msg_info</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+                <span class="k">if</span> <span class="n">msg_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;GRP_HIS&quot;</span><span class="p">:</span>
+                    <span class="n">msgs</span><span class="o">=</span><span class="n">grp_history</span><span class="p">(</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">new_msg_info</span><span class="o">=</span><span class="nb">str</span><span class="p">([</span><span class="s2">&quot;GRP_HIS&quot;</span><span class="p">,</span><span class="n">msg_info</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">msgs</span><span class="p">])</span>
+                    <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">new_msg_info</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="send_offline_msgs"><a class="viewcode-back" href="../server1.html#server1.send_offline_msgs">[docs]</a><span class="k">def</span> <span class="nf">send_offline_msgs</span><span class="p">(</span><span class="n">client</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This function sends messages to a user while user was offline.</span>
+
+<span class="sd">    It gets messages stored from the database.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        client (socket): socket object of client who sent the request</span>
+<span class="sd">        name (string): Username of receiver</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">l</span><span class="o">=</span><span class="n">offline_msgs</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>     
+    <span class="k">return</span>   </div>
+
+<div class="viewcode-block" id="receive"><a class="viewcode-back" href="../server1.html#server1.receive">[docs]</a><span class="k">def</span> <span class="nf">receive</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;This function accepts connection from the client.</span>
+
+<span class="sd">    Also starts the handle thread, one for each client connected.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Accept Connection</span>
+        <span class="n">client</span><span class="p">,</span> <span class="n">address</span> <span class="o">=</span> <span class="n">server</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Connected with </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">address</span><span class="p">)))</span>
+        <span class="n">nickname</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span>
+        <span class="n">Dict</span><span class="p">[</span><span class="n">nickname</span><span class="p">]</span><span class="o">=</span><span class="n">client</span>
+        <span class="c1"># Print And Broadcast Nickname</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Nickname is </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nickname</span><span class="p">))</span>
+        <span class="c1"># add_clinet(&quot;{} joined!&quot;.format(nickname).encode(&#39;ascii&#39;))</span>
+        <span class="n">a</span><span class="p">[</span><span class="n">nickname</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+        <span class="c1"># client.send(s.encode(&#39;ascii&#39;))</span>
+        <span class="n">send_offline_msgs</span><span class="p">(</span><span class="n">client</span><span class="p">,</span><span class="n">nickname</span><span class="p">)</span>
+        
+        <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">handle</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">client</span><span class="p">,</span><span class="n">nickname</span><span class="p">,))</span>
+        <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+<span class="c1"># server_thr=threading.Thread(target=server_recv)</span>
+<span class="c1"># server_thr.start()        </span>
+<span class="c1"># receive()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, 210050048,210050069,210050096.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

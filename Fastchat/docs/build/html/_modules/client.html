@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>client &mdash; FastChat  documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> FastChat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Fastchat</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">FastChat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">Module code</a> &raquo;</li>
+      <li>client</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for client</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">rsa</span>
+<span class="kn">from</span> <span class="nn">Crypto.Cipher</span> <span class="k">import</span> <span class="n">PKCS1_OAEP</span>
+<span class="kn">from</span> <span class="nn">Crypto.Protocol.KDF</span> <span class="k">import</span> <span class="n">PBKDF2</span>
+<span class="kn">from</span> <span class="nn">Crypto.PublicKey</span> <span class="k">import</span> <span class="n">RSA</span>
+
+<span class="kn">from</span>  <span class="nn">database</span> <span class="k">import</span> <span class="n">insert_user</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">find_user</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">recvPubKey</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">recvPrivKey</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">update_status</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">online_users</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">grp_names</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">available_users</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">members</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">clients_s1</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">change_clients_s1</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">clients_s2</span>
+<span class="kn">from</span> <span class="nn">database</span> <span class="k">import</span> <span class="n">change_clients_s2</span>
+
+
+<span class="c1"># take the server name and port name</span>
+<span class="n">LINE_UP</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\033</span><span class="s1">[1A&#39;</span>
+<span class="n">LINE_CLEAR</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[2K&#39;</span>
+<span class="c1">#host = &#39;192.168.126.212&#39;</span>
+<span class="sd">&quot;&quot;&quot;Allocating host and port numbers</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">host</span> <span class="o">=</span> <span class="s1">&#39;localhost&#39;</span>
+<span class="n">port1</span> <span class="o">=</span> <span class="mi">5555</span>
+<span class="n">port2</span> <span class="o">=</span> <span class="mi">5556</span>
+
+<span class="c1"># create a socket at client side</span>
+<span class="c1"># using TCP / IP protocol</span>
+<span class="n">client</span><span class="o">=</span><span class="n">client</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span>
+                    <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+<div class="viewcode-block" id="connect"><a class="viewcode-back" href="../client.html#client.connect">[docs]</a><span class="k">def</span> <span class="nf">connect</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;This function takes care of connecting clients to one of the server.</span>
+<span class="sd">    </span>
+<span class="sd">    Connecting client with server carrying minimum number of clients. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">clients_s1</span><span class="p">()</span><span class="o">&lt;=</span><span class="n">clients_s2</span><span class="p">()):</span>  
+        <span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="n">host</span><span class="p">,</span> <span class="n">port1</span><span class="p">))</span>
+        <span class="n">change_clients_s1</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="n">host</span><span class="p">,</span><span class="n">port2</span><span class="p">))</span>
+        <span class="n">change_clients_s2</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+<span class="k">global</span> <span class="n">w</span>
+<span class="n">w</span><span class="o">=-</span><span class="mi">1</span>
+<span class="k">global</span> <span class="n">r</span>
+<span class="n">r</span><span class="o">=-</span><span class="mi">1</span>
+<div class="viewcode-block" id="Login"><a class="viewcode-back" href="../client.html#client.Login">[docs]</a><span class="k">def</span> <span class="nf">Login</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;User performing login tasks until the login is complete</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ENTER:</span><span class="se">\n</span><span class="s2">    1 FOR OLD USER</span><span class="se">\n</span><span class="s2">    2 FOR NEW USER&quot;</span><span class="p">)</span>
+    <span class="n">i</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="nb">input</span><span class="p">())</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">i</span><span class="o">!=</span><span class="mi">1</span> <span class="ow">and</span> <span class="n">i</span><span class="o">!=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;enter only 1 or 2&quot;</span><span class="p">)</span>
+        <span class="n">i</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="nb">input</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">clear_terminal</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">sign_in</span><span class="p">()</span> 
+    <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+        <span class="n">clear_terminal</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">sign_up</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="sign_in"><a class="viewcode-back" href="../client.html#client.sign_in">[docs]</a><span class="k">def</span> <span class="nf">sign_in</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Sigin Part: Performing login task of already existing users.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enter your Id:&quot;</span><span class="p">)</span>
+    <span class="nb">id</span><span class="o">=</span><span class="nb">input</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enter your password: &quot;</span><span class="p">)</span>
+    <span class="n">password</span><span class="o">=</span><span class="nb">input</span><span class="p">()</span>
+    <span class="k">while</span> <span class="n">find_user</span><span class="p">([</span><span class="nb">id</span><span class="p">,</span><span class="n">password</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">!=</span><span class="mi">2</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">find_user</span><span class="p">([</span><span class="nb">id</span><span class="p">,</span><span class="n">password</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;password is incorrect enter again&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">find_user</span><span class="p">([</span><span class="nb">id</span><span class="p">,</span><span class="n">password</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Please first signup to enjoy the services&quot;</span><span class="p">)</span>
+            <span class="n">sign_up</span><span class="p">()</span>
+            <span class="k">return</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enter your Id:&quot;</span><span class="p">)</span>
+        <span class="nb">id</span><span class="o">=</span><span class="nb">input</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enter your password: &quot;</span><span class="p">)</span>
+        <span class="n">password</span><span class="o">=</span><span class="nb">input</span><span class="p">()</span>
+
+    <span class="n">salt</span> <span class="o">=</span> <span class="s2">&quot;pandas&quot;</span> 
+    <span class="n">master_key</span> <span class="o">=</span> <span class="n">PBKDF2</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="n">salt</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># bigger count = better</span>
+    <span class="k">def</span> <span class="nf">myrand</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Recreating the encryption keys</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n (int): sets seed</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            rsa key: keyset of a particular user</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">myrand</span><span class="o">.</span><span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">PBKDF2</span><span class="p">(</span><span class="n">master_key</span><span class="p">,</span> <span class="s2">&quot;my_rand:</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">myrand</span><span class="o">.</span><span class="n">counter</span><span class="p">,</span> <span class="n">dkLen</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">myrand</span><span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">RSA</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">randfunc</span><span class="o">=</span><span class="n">myrand</span><span class="p">)</span>
+    <span class="k">global</span> <span class="n">decryptor</span>
+    <span class="n">decryptor</span> <span class="o">=</span> <span class="n">PKCS1_OAEP</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;private decryptor to decrypt the incoming messages. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">nickname</span>
+    <span class="n">nickname</span><span class="o">=</span><span class="nb">id</span>    
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">nickname</span><span class="o">+</span><span class="s2">&quot;.log&quot;</span><span class="p">,</span>
+                    <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> ## </span><span class="si">%(message)s</span><span class="s1">&#39;</span>
+                    <span class="p">)</span>
+    <span class="k">global</span> <span class="n">logger</span>
+    <span class="sd">&quot;&quot;&quot;Generating the logfile to note inputs and outputs from the client</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+    <span class="n">connect</span><span class="p">()</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">nickname</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">))</span>
+    <span class="n">update_status</span><span class="p">(</span><span class="n">nickname</span><span class="p">)</span>
+    <span class="n">print_unread_msgs</span><span class="p">()</span></div>
+   
+
+<div class="viewcode-block" id="sign_up"><a class="viewcode-back" href="../client.html#client.sign_up">[docs]</a><span class="k">def</span> <span class="nf">sign_up</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Singing up for new user storing the login credentials and creating public and private keys based on the password of user</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;choose your id:&quot;</span><span class="p">)</span>
+    <span class="nb">id</span><span class="o">=</span><span class="nb">input</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Choose your password:&quot;</span><span class="p">)</span>
+    <span class="n">password</span><span class="o">=</span><span class="nb">input</span><span class="p">()</span>
+    <span class="k">while</span> <span class="n">find_user</span><span class="p">([</span><span class="nb">id</span><span class="p">,</span><span class="n">password</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span><span class="o">!=</span><span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;choose again:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;choose your id:&quot;</span><span class="p">)</span>
+        <span class="nb">id</span><span class="o">=</span><span class="nb">input</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Choose your password:&quot;</span><span class="p">)</span>
+        <span class="n">password</span><span class="o">=</span><span class="nb">input</span><span class="p">()</span>
+
+    <span class="n">salt</span> <span class="o">=</span> <span class="s2">&quot;pandas&quot;</span> 
+    <span class="n">master_key</span> <span class="o">=</span> <span class="n">PBKDF2</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="n">salt</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># bigger count = better</span>
+    <span class="k">def</span> <span class="nf">my_rand</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Recreating the encryption keys</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n (int): sets seed</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            rsa key: keyset of a particular user</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">my_rand</span><span class="o">.</span><span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">PBKDF2</span><span class="p">(</span><span class="n">master_key</span><span class="p">,</span> <span class="s2">&quot;my_rand:</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">my_rand</span><span class="o">.</span><span class="n">counter</span><span class="p">,</span> <span class="n">dkLen</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">my_rand</span><span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">RSA</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="n">randfunc</span><span class="o">=</span><span class="n">my_rand</span><span class="p">)</span>
+    <span class="n">PubKey</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">publickey</span><span class="p">()</span><span class="o">.</span><span class="n">exportKey</span><span class="p">(</span><span class="s1">&#39;PEM&#39;</span><span class="p">)</span>
+    <span class="n">insert_user</span><span class="p">([</span><span class="nb">id</span><span class="p">,</span><span class="n">password</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">PubKey</span><span class="p">,</span><span class="sa">b</span><span class="s1">&#39;dummy&#39;</span><span class="p">])</span>
+    <span class="sd">&quot;&quot;&quot;Storing credentials and Public Key of user in the database.&quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">decryptor</span>
+    <span class="n">decryptor</span> <span class="o">=</span> <span class="n">PKCS1_OAEP</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;private decryptor to decrypt the incoming messages. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">nickname</span>
+    <span class="n">nickname</span><span class="o">=</span><span class="nb">id</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">nickname</span><span class="o">+</span><span class="s2">&quot;.log&quot;</span><span class="p">,</span>
+                    <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> ## </span><span class="si">%(message)s</span><span class="s1">&#39;</span>
+                    <span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot;Generating the logfile to note inputs and outputs from the client</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">logger</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+    <span class="n">connect</span><span class="p">()</span>
+    <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">nickname</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">))</span>
+    <span class="n">print_unread_msgs</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="print_unread_msgs"><a class="viewcode-back" href="../client.html#client.print_unread_msgs">[docs]</a><span class="k">def</span> <span class="nf">print_unread_msgs</span><span class="p">():</span>   
+    <span class="sd">&quot;&quot;&quot;When an already existing user connects to the server, all the messages sent to user either DM or in a group while user was offline are displayed.</span>
+
+<span class="sd">    The messages stored in database are in encrypted form, messages will be displayed after decrypting on client&#39;s side. </span>
+
+<span class="sd">    This function starts the client&#39;s receive thread and write thread.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span>
+    <span class="n">chat</span><span class="o">=</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">message</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">chat</span><span class="o">!=</span><span class="p">[]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;----------------------------------------------------------&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;UNREAD MESSAGES:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;UNREAD MESSAGES:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">chat</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;@&quot;</span> <span class="ow">in</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                        <span class="n">gname</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">PrivKey</span> <span class="o">=</span> <span class="n">recvPrivKey</span><span class="p">(</span><span class="n">gname</span><span class="p">)</span>
+                        <span class="n">key</span> <span class="o">=</span> <span class="n">rsa</span><span class="o">.</span><span class="n">PrivateKey</span><span class="o">.</span><span class="n">load_pkcs1</span><span class="p">(</span><span class="n">PrivKey</span><span class="p">)</span>
+                        <span class="n">msgs</span><span class="o">=</span><span class="n">rsa</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;:&quot;</span><span class="o">+</span><span class="n">msgs</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;:&quot;</span><span class="o">+</span><span class="n">msgs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msgs</span><span class="o">=</span><span class="n">decryptor</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">msgs</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">msgs</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NO UNREAD MESSAGES&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;NO UNREAD MESSAGES&quot;</span><span class="p">)</span>
+    <span class="n">receive_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">receive</span><span class="p">)</span>
+    <span class="n">receive_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="n">write_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">write</span><span class="p">)</span>
+    <span class="n">write_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="clear_terminal"><a class="viewcode-back" href="../client.html#client.clear_terminal">[docs]</a><span class="k">def</span> <span class="nf">clear_terminal</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This will clear lines in terminal of client&#39;s interface.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        i (integer): Number of lines to be cleared.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">i</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">LINE_UP</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">LINE_CLEAR</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="receive"><a class="viewcode-back" href="../client.html#client.receive">[docs]</a><span class="k">def</span> <span class="nf">receive</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;This function receives messages from the servers and decrypts it based on the first keyword received from server.</span>
+
+<span class="sd">    Images are received in chunks of size 1024 bytes.</span>
+
+<span class="sd">    Messages received directly and that from group are seperated.</span>
+
+<span class="sd">    Chat history with group or each user can also be displayed after decrypting messages stored in database. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span>
+            <span class="n">msg</span><span class="o">=</span><span class="nb">eval</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">&quot;Image&quot;</span> <span class="ow">in</span> <span class="nb">eval</span><span class="p">(</span><span class="n">message</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">message</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;: &quot;</span><span class="p">)</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">message</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;@&quot;</span><span class="o">+</span><span class="n">nickname</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="nb">eval</span><span class="p">(</span><span class="n">message</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">img_copy</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+                <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="n">recv_img</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">recv_img</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;%Image_Sent%&quot;</span><span class="p">:</span>
+                        <span class="k">break</span>
+                    <span class="n">img_copy</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">recv_img</span><span class="p">)</span>     
+                <span class="n">img_copy</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;You have an image saved as &quot;</span><span class="p">,</span><span class="n">filename</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;You have an image saved as &quot;</span><span class="o">+</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">msg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;GRP&quot;</span><span class="p">:</span>
+                <span class="n">gname</span> <span class="o">=</span> <span class="n">msg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;@&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">PrivKey</span> <span class="o">=</span> <span class="n">recvPrivKey</span><span class="p">(</span><span class="n">gname</span><span class="p">)</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">rsa</span><span class="o">.</span><span class="n">PrivateKey</span><span class="o">.</span><span class="n">load_pkcs1</span><span class="p">(</span><span class="n">PrivKey</span><span class="p">)</span>
+                <span class="n">decmsg</span> <span class="o">=</span> <span class="n">rsa</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">decmsg</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">decmsg</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">msg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;HIS&quot;</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---------------------------&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">msg</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="s1">&#39;@&#39;</span> <span class="ow">in</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                        <span class="n">gname</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">PrivKey</span> <span class="o">=</span> <span class="n">recvPrivKey</span><span class="p">(</span><span class="n">gname</span><span class="p">)</span>
+                        <span class="n">key</span> <span class="o">=</span> <span class="n">rsa</span><span class="o">.</span><span class="n">PrivateKey</span><span class="o">.</span><span class="n">load_pkcs1</span><span class="p">(</span><span class="n">PrivKey</span><span class="p">)</span>
+                        <span class="n">decmsg</span> <span class="o">=</span> <span class="n">rsa</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">decmsg</span><span class="p">)</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">decmsg</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="s2">&quot;-&quot;</span> <span class="ow">in</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                            <span class="c1"># recvname = i[0].split(&quot;-&quot;)[1]</span>
+                            <span class="c1"># PrivKey = recvPrivKey(recvname)</span>
+                            <span class="c1"># key = rsa.PrivateKey.load_pkcs1(PrivKey)</span>
+                            <span class="c1"># decmsg = rsa.decrypt(i[1],key).decode()</span>
+                            <span class="c1"># print(i[0]+&quot;: &quot;+decmsg)</span>
+                            <span class="c1"># logger.info(i[0]+&quot;: &quot;+decmsg)</span>
+                            <span class="k">pass</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="c1"># PrivKey = recvPrivKey(nickname)</span>
+                            <span class="c1"># key = rsa.PrivateKey.load_pkcs1(PrivKey)</span>
+                            <span class="c1"># decmsg = rsa.decrypt(i[1],key).decode()</span>
+                            <span class="n">decmsg</span> <span class="o">=</span> <span class="n">decryptor</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+                            <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">decmsg</span><span class="p">)</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">decmsg</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---------------------------&quot;</span><span class="p">)</span>
+                
+            <span class="k">elif</span> <span class="n">msg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;GRP_HIS&quot;</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---------------------------&quot;</span><span class="p">)</span>
+                <span class="n">PrivKey</span> <span class="o">=</span> <span class="n">recvPrivKey</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">rsa</span><span class="o">.</span><span class="n">PrivateKey</span><span class="o">.</span><span class="n">load_pkcs1</span><span class="p">(</span><span class="n">PrivKey</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Group Name&quot;</span><span class="p">,</span><span class="n">end</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Group Name &quot;</span><span class="o">+</span><span class="n">msg</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">msg</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">end</span><span class="o">=</span><span class="s2">&quot;: &quot;</span><span class="p">)</span>
+                    <span class="n">decmsg</span> <span class="o">=</span> <span class="n">rsa</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">decmsg</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">decmsg</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---------------------------&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">msg</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;DM&quot;</span><span class="p">:</span>
+                <span class="n">decmsg</span> <span class="o">=</span> <span class="n">decryptor</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">decmsg</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">decmsg</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;An error occured!&quot;</span><span class="p">)</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">break</span></div>
+
+<div class="viewcode-block" id="DM_text"><a class="viewcode-back" href="../client.html#client.DM_text">[docs]</a><span class="k">def</span> <span class="nf">DM_text</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;This function sends text messages to server.</span>
+
+<span class="sd">    Takes input message and receiver from the terminal. </span>
+
+<span class="sd">    Encrypts the message to be sent with receiver&#39;s PublicKey.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">clear_terminal</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">message_to</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Whom do u want to send</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Whom do u want to send&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">message_to</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">message_to</span> <span class="ow">in</span> <span class="n">available_users</span><span class="p">()):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NO USER NAMED &quot;</span><span class="o">+</span><span class="n">message_to</span><span class="o">+</span><span class="s2">&quot; EXISTS&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;NO USER NAMED &quot;</span><span class="o">+</span><span class="n">message_to</span><span class="o">+</span><span class="s2">&quot; EXISTS&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="n">m</span><span class="o">=</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;type your message</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;type your message&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="n">clear_terminal</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">o</span><span class="o">=</span><span class="s2">&quot;YOU-&gt;&quot;</span><span class="o">+</span><span class="n">message_to</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">m</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+        <span class="n">PubKey</span> <span class="o">=</span> <span class="n">recvPubKey</span><span class="p">(</span><span class="n">message_to</span><span class="p">)</span>
+        <span class="n">enckey</span> <span class="o">=</span> <span class="n">RSA</span><span class="o">.</span><span class="n">importKey</span><span class="p">(</span><span class="n">PubKey</span><span class="p">)</span>
+        <span class="n">encryptor</span> <span class="o">=</span> <span class="n">PKCS1_OAEP</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">enckey</span><span class="p">)</span>
+        <span class="n">encmsg</span> <span class="o">=</span> <span class="n">encryptor</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">))</span>
+        <span class="n">msg_info</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;DM&quot;</span><span class="p">,</span><span class="n">message_to</span><span class="p">,</span><span class="n">encmsg</span><span class="p">]</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">msg_info</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">))</span>
+        <span class="k">break</span>     </div>
+
+<div class="viewcode-block" id="DM_img"><a class="viewcode-back" href="../client.html#client.DM_img">[docs]</a><span class="k">def</span> <span class="nf">DM_img</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;This function sends images from client to server.</span>
+
+<span class="sd">    Takes the path of image file to be sent as input from the terminal.</span>
+
+<span class="sd">    Sends chunks of 1024 bytes of data to server repeatedly until whole file is read. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">clear_terminal</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">message_to</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Whom do u want to send</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Whom do u want to send&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">message_to</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">message_to</span> <span class="ow">in</span> <span class="n">available_users</span><span class="p">()):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NO USER NAMED &quot;</span><span class="o">+</span><span class="n">message_to</span><span class="o">+</span><span class="s2">&quot; EXIST&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;NO USER NAMED &quot;</span><span class="o">+</span><span class="n">message_to</span><span class="o">+</span><span class="s2">&quot; EXIST&quot;</span><span class="p">)</span>
+        <span class="n">path</span><span class="o">=</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;type image path</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;type image path&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">isz</span> <span class="o">=</span> <span class="s2">&quot;Image&quot;</span> 
+        <span class="n">img_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">isz</span><span class="p">,</span><span class="n">message_to</span><span class="p">,</span><span class="n">filename</span><span class="p">]</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">img_list</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">))</span>
+        <span class="n">imgfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+        <span class="n">image</span><span class="o">=</span><span class="n">imgfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">image</span><span class="p">:</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+            <span class="n">image</span><span class="o">=</span><span class="n">imgfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;%Image_Sent%&quot;</span><span class="p">)</span>
+        <span class="n">imgfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">break</span></div>
+
+<div class="viewcode-block" id="GRP_text"><a class="viewcode-back" href="../client.html#client.GRP_text">[docs]</a><span class="k">def</span> <span class="nf">GRP_text</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;This function sends group text messages to server.</span>
+
+<span class="sd">    Takes input message and group to which it should be sent from the terminal.</span>
+
+<span class="sd">    Sends message in Username@Groupname format.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">clear_terminal</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">message_to</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;which group do you want to send</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;which group do you want to send&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">message_to</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">message_to</span> <span class="ow">in</span> <span class="n">grp_names</span><span class="p">()):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;GROUP NAMED &quot;</span><span class="o">+</span><span class="n">message_to</span><span class="o">+</span><span class="s2">&quot; DOES NOT EXIST&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GROUP NAMED &quot;</span><span class="o">+</span><span class="n">message_to</span><span class="o">+</span><span class="s2">&quot; DOES NOT EXIST&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="n">m</span><span class="o">=</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;type your message</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;type your message&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="n">clear_terminal</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">PubKey</span> <span class="o">=</span> <span class="n">recvPubKey</span><span class="p">(</span><span class="n">message_to</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">rsa</span><span class="o">.</span><span class="n">PublicKey</span><span class="o">.</span><span class="n">load_pkcs1</span><span class="p">(</span><span class="n">PubKey</span><span class="p">)</span>
+        <span class="n">encmsg</span> <span class="o">=</span> <span class="n">rsa</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">),</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">msg_info</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;GRP&quot;</span><span class="p">,</span><span class="n">message_to</span><span class="p">,</span><span class="n">encmsg</span><span class="p">]</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">msg_info</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;YOU&quot;</span><span class="o">+</span><span class="s2">&quot;@&quot;</span><span class="o">+</span><span class="n">message_to</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">m</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;YOU&quot;</span><span class="o">+</span><span class="s2">&quot;@&quot;</span><span class="o">+</span><span class="n">message_to</span><span class="o">+</span><span class="s2">&quot;: &quot;</span><span class="o">+</span><span class="n">m</span><span class="p">)</span>
+        <span class="k">break</span></div>
+
+<div class="viewcode-block" id="write"><a class="viewcode-back" href="../client.html#client.write">[docs]</a><span class="k">def</span> <span class="nf">write</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;This function performs task of writing from clients to server and splits the task to different functions and provides the interface.</span>
+
+<span class="sd">    1- DM&#39;s</span>
+
+<span class="sd">    2- Group Chats</span>
+
+<span class="sd">    3- Creating a new group</span>
+
+<span class="sd">    4- Adding participant to a group</span>
+
+<span class="sd">    5- Display chat history with the specified user</span>
+
+<span class="sd">    6- Display chat history from a specified group</span>
+
+<span class="sd">    7- Displays all online users</span>
+
+<span class="sd">    8- Displays all groups user present in</span>
+
+<span class="sd">    9- Displays all users available </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---------------------------------INSTRUCTIONS----------------------------------</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;ENTER:</span>
+<span class="s1">          1-FOR-DMS,</span>
+<span class="s1">          2-FOR GROUP CHATS ,</span>
+<span class="s1">          3-FOR CREATING A GROUP ,</span>
+<span class="s1">          4-FOR ADDING PARTICIPANT,</span>
+<span class="s1">          5-FOR HISTORY</span>
+<span class="s1">          6-FOR GROUP CHAT HISTORY</span>
+<span class="s1">          7-FOR AVAILABLE ONLINE USERS</span>
+<span class="s1">          8-FOR AVAILBALE GROUPS</span>
+<span class="s1">          9-FOR AVAILABE USERS</span>
+<span class="s1">          CLTRL-C FOR EXIT&#39;&#39;&#39;</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">e</span><span class="o">=</span><span class="nb">input</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">cmd</span><span class="o">=</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;ENTER :1 FOR TEXT , 2 FOR IMAGES</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ENTER :1 FOR TEXT , 2 FOR IMAGES&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">DM_text</span><span class="p">()</span>
+                    <span class="k">break</span>
+                <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+                    <span class="n">DM_img</span><span class="p">()</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ENTER ONLY 1 OR 2&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">cmd</span><span class="o">=</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;ENTER :1 FOR TEXT , 2 FOR IMAGES</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ENTER :1 FOR TEXT , 2 FOR IMAGES&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">GRP_text</span><span class="p">()</span>
+                    <span class="k">break</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ENTER ONLY 1 OR 2&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span>
+            <span class="n">cmd</span><span class="o">=</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;ENTER GROUP NAME</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ENTER GROUP NAME&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+            <span class="n">msg_info</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CREATE&quot;</span><span class="p">,</span><span class="n">cmd</span><span class="p">]</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">msg_info</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;CREATED GROUP NAMED &quot;</span><span class="o">+</span><span class="n">cmd</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;CREATED GROUP NAMED &quot;</span><span class="o">+</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">==</span><span class="mi">4</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">group_name</span><span class="o">=</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;ENTER NAME OF GROUP</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ENTER NAME OF GROUP&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">group_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">group_name</span> <span class="ow">in</span> <span class="n">grp_names</span><span class="p">():</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;GROUP NAMED &quot;</span><span class="o">+</span><span class="n">group_name</span><span class="o">+</span><span class="s2">&quot; DOES NOT EXISTS&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GROUP NAMED &quot;</span><span class="o">+</span><span class="n">group_name</span><span class="o">+</span><span class="s2">&quot; DOES NOT EXISTS&quot;</span><span class="p">)</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">paricipant</span><span class="o">=</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;ENTER THE NAME OF PARTICIPANT TO BE ADDED</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ENTER THE NAME OF PARTICIPANT TO BE ADDED&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">paricipant</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">paricipant</span> <span class="ow">in</span> <span class="n">members</span><span class="p">():</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;COULD NOT FIND USER&quot;</span><span class="o">+</span><span class="n">paricipant</span><span class="o">+</span><span class="s2">&quot;IN DATABASE&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;COULD NOT FIND USER&quot;</span><span class="o">+</span><span class="n">paricipant</span><span class="o">+</span><span class="s2">&quot;IN DATABASE&quot;</span><span class="p">)</span>
+            <span class="n">msg_info</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ADD&quot;</span><span class="p">,</span><span class="n">group_name</span><span class="p">,</span><span class="n">paricipant</span><span class="p">]</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">msg_info</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ADDED SUCCESSFULLY &quot;</span><span class="o">+</span><span class="n">paricipant</span><span class="o">+</span><span class="s2">&quot; in &quot;</span><span class="o">+</span><span class="n">group_name</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ADDED SUCCESSFULLY &quot;</span><span class="o">+</span><span class="n">paricipant</span><span class="o">+</span><span class="s2">&quot; in &quot;</span><span class="o">+</span><span class="n">group_name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">==</span><span class="mi">5</span><span class="p">:</span>
+            <span class="n">msg_info</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;HIS&quot;</span><span class="p">]</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">msg_info</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">==</span><span class="mi">6</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">group_name</span><span class="o">=</span><span class="nb">input</span><span class="p">(</span><span class="s2">&quot;ENTER NAME OF GROUP</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ENTER NAME OF GROUP&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">group_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">group_name</span> <span class="ow">in</span> <span class="n">grp_names</span><span class="p">():</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;GROUP NAMED &quot;</span><span class="o">+</span><span class="n">group_name</span><span class="o">+</span><span class="s2">&quot; DOES NOT EXISTS&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GROUP NAMED &quot;</span><span class="o">+</span><span class="n">group_name</span><span class="o">+</span><span class="s2">&quot; DOES NOT EXISTS&quot;</span><span class="p">)</span>
+            <span class="n">msg_info</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;GRP_HIS&quot;</span><span class="p">,</span><span class="n">group_name</span><span class="p">]</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">msg_info</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">==</span><span class="mi">7</span><span class="p">:</span>
+            <span class="n">users</span><span class="o">=</span><span class="n">online_users</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-----------------------------&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">users</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;------------------------------&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">==</span><span class="mi">8</span><span class="p">:</span>
+            <span class="n">grps</span><span class="o">=</span><span class="n">grp_names</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;------------------------------&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">grps</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------------------------------&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">==</span><span class="mi">9</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-------------------------------&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">available_users</span><span class="p">():</span>
+                <span class="nb">print</span> <span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;---------------------------------&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PLEASE ENTER NUMBER BETWEEN 1 AND 9 ONLY&quot;</span><span class="p">)</span></div>
+        
+<span class="c1"># Starting Threads For Listening And Writing</span>
+
+
+<span class="c1">#Login()</span>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, 210050048,210050069,210050096.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

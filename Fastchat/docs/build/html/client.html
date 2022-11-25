@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>client module &mdash; FastChat  documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="database module" href="database.html" />
+    <link rel="prev" title="Fastchat" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> FastChat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Fastchat</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">client module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="database.html">database module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="server1.html">server1 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="server2.html">server2 module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">FastChat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">Fastchat</a> &raquo;</li>
+      <li>client module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/client.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="module-client">
+<span id="client-module"></span><h1>client module<a class="headerlink" href="#module-client" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="client.DM_img">
+<code class="descclassname">client.</code><code class="descname">DM_img</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/client.html#DM_img"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.DM_img" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function sends images from client to server.</p>
+<p>Takes the path of image file to be sent as input from the terminal.</p>
+<p>Sends chunks of 1024 bytes of data to server repeatedly until whole file is read.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="client.DM_text">
+<code class="descclassname">client.</code><code class="descname">DM_text</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/client.html#DM_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.DM_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function sends text messages to server.</p>
+<p>Takes input message and receiver from the terminal.</p>
+<p>Encrypts the message to be sent with receiver’s PublicKey.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="client.GRP_text">
+<code class="descclassname">client.</code><code class="descname">GRP_text</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/client.html#GRP_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.GRP_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function sends group text messages to server.</p>
+<p>Takes input message and group to which it should be sent from the terminal.</p>
+<p>Sends message in <a class="reference external" href="mailto:Username&#37;&#52;&#48;Groupname">Username<span>&#64;</span>Groupname</a> format.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="client.LINE_CLEAR">
+<code class="descclassname">client.</code><code class="descname">LINE_CLEAR</code><em class="property"> = '\x1b[2K'</em><a class="headerlink" href="#client.LINE_CLEAR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allocating host and port numbers</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="client.Login">
+<code class="descclassname">client.</code><code class="descname">Login</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/client.html#Login"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.Login" title="Permalink to this definition">¶</a></dt>
+<dd><p>User performing login tasks until the login is complete</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="client.clear_terminal">
+<code class="descclassname">client.</code><code class="descname">clear_terminal</code><span class="sig-paren">(</span><em>i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/client.html#clear_terminal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.clear_terminal" title="Permalink to this definition">¶</a></dt>
+<dd><p>This will clear lines in terminal of client’s interface.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>i (integer): Number of lines to be cleared.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="client.connect">
+<code class="descclassname">client.</code><code class="descname">connect</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/client.html#connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function takes care of connecting clients to one of the server.</p>
+<p>Connecting client with server carrying minimum number of clients.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="client.print_unread_msgs">
+<code class="descclassname">client.</code><code class="descname">print_unread_msgs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/client.html#print_unread_msgs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.print_unread_msgs" title="Permalink to this definition">¶</a></dt>
+<dd><p>When an already existing user connects to the server, all the messages sent to user either DM or in a group while user was offline are displayed.</p>
+<p>The messages stored in database are in encrypted form, messages will be displayed after decrypting on client’s side.</p>
+<p>This function starts the client’s receive thread and write thread.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="client.receive">
+<code class="descclassname">client.</code><code class="descname">receive</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/client.html#receive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.receive" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function receives messages from the servers and decrypts it based on the first keyword received from server.</p>
+<p>Images are received in chunks of size 1024 bytes.</p>
+<p>Messages received directly and that from group are seperated.</p>
+<p>Chat history with group or each user can also be displayed after decrypting messages stored in database.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="client.sign_in">
+<code class="descclassname">client.</code><code class="descname">sign_in</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/client.html#sign_in"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.sign_in" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sigin Part: Performing login task of already existing users.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="client.sign_up">
+<code class="descclassname">client.</code><code class="descname">sign_up</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/client.html#sign_up"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.sign_up" title="Permalink to this definition">¶</a></dt>
+<dd><p>Singing up for new user storing the login credentials and creating public and private keys based on the password of user</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="client.write">
+<code class="descclassname">client.</code><code class="descname">write</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/client.html#write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#client.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function performs task of writing from clients to server and splits the task to different functions and provides the interface.</p>
+<p>1- DM’s</p>
+<p>2- Group Chats</p>
+<p>3- Creating a new group</p>
+<p>4- Adding participant to a group</p>
+<p>5- Display chat history with the specified user</p>
+<p>6- Display chat history from a specified group</p>
+<p>7- Displays all online users</p>
+<p>8- Displays all groups user present in</p>
+<p>9- Displays all users available</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="Fastchat" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="database.html" class="btn btn-neutral float-right" title="database module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, 210050048,210050069,210050096.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

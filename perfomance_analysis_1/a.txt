@@ -1,0 +1,258 @@
+47435 NO UNREAD MESSAGES
+47435 ---------------------------------INSTRUCTIONS----------------------------------
+47435 ENTER:
+47532 NO UNREAD MESSAGES
+47533 ---------------------------------INSTRUCTIONS----------------------------------
+47533 ENTER:
+47639 NO UNREAD MESSAGES
+47640 ---------------------------------INSTRUCTIONS----------------------------------
+47641 ENTER:
+47741 NO UNREAD MESSAGES
+47742 ---------------------------------INSTRUCTIONS----------------------------------
+47743 ENTER:
+47842 NO UNREAD MESSAGES
+47844 ---------------------------------INSTRUCTIONS----------------------------------
+47845 ENTER:
+47945 NO UNREAD MESSAGES
+47946 ---------------------------------INSTRUCTIONS----------------------------------
+47947 ENTER:
+48033 1
+48033 ENTER :1 FOR TEXT  2 FOR IMAGES
+48033 1
+48033 Whom do u want to send
+48033 a4
+48034 type your message
+48034 h0
+48057 h0
+48134 1
+48134 ENTER :1 FOR TEXT  2 FOR IMAGES
+48134 1
+48134 Whom do u want to send
+48134 a6
+48134 type your message
+48135 h1
+48156 h1
+48235 1
+48235 ENTER :1 FOR TEXT  2 FOR IMAGES
+48235 1
+48236 Whom do u want to send
+48236 a2
+48237 type your message
+48237 h2
+48280 h2
+48337 1
+48337 ENTER :1 FOR TEXT  2 FOR IMAGES
+48337 1
+48337 Whom do u want to send
+48338 a6
+48339 type your message
+48339 h3
+48355 h3
+48438 1
+48439 ENTER :1 FOR TEXT  2 FOR IMAGES
+48439 1
+48439 Whom do u want to send
+48439 a6
+48441 type your message
+48441 h4
+48456 h4
+48540 1
+48541 ENTER :1 FOR TEXT  2 FOR IMAGES
+48541 1
+48541 Whom do u want to send
+48541 a6
+48543 type your message
+48543 h5
+48559 h5
+48642 1
+48643 ENTER :1 FOR TEXT  2 FOR IMAGES
+48643 1
+48643 Whom do u want to send
+48644 a6
+48645 type your message
+48645 h6
+48687 h6
+48744 1
+48744 ENTER :1 FOR TEXT  2 FOR IMAGES
+48744 1
+48744 Whom do u want to send
+48744 a4
+48745 type your message
+48745 h7
+48760 h7
+48845 1
+48845 ENTER :1 FOR TEXT  2 FOR IMAGES
+48846 1
+48846 Whom do u want to send
+48846 a4
+48847 type your message
+48848 h8
+48865 h8
+48947 1
+48947 ENTER :1 FOR TEXT  2 FOR IMAGES
+48947 1
+48948 Whom do u want to send
+48948 a2
+48949 type your message
+48949 h9
+48971 h9
+49048 1
+49049 ENTER :1 FOR TEXT  2 FOR IMAGES
+49049 1
+49050 Whom do u want to send
+49050 a6
+49051 type your message
+49051 h10
+49067 h10
+49150 1
+49151 ENTER :1 FOR TEXT  2 FOR IMAGES
+49151 1
+49151 Whom do u want to send
+49152 a6
+49153 type your message
+49153 h11
+49168 h11
+49252 1
+49253 ENTER :1 FOR TEXT  2 FOR IMAGES
+49253 1
+49253 Whom do u want to send
+49253 a6
+49255 type your message
+49255 h12
+49271 h12
+49355 1
+49355 ENTER :1 FOR TEXT  2 FOR IMAGES
+49355 1
+49355 Whom do u want to send
+49356 a2
+49357 type your message
+49357 h13
+49373 h13
+49457 1
+49457 ENTER :1 FOR TEXT  2 FOR IMAGES
+49458 1
+49458 Whom do u want to send
+49458 a6
+49459 type your message
+49459 h14
+49476 h14
+49559 1
+49559 ENTER :1 FOR TEXT  2 FOR IMAGES
+49559 1
+49560 Whom do u want to send
+49560 a5
+49561 type your message
+49561 h15
+49581 h15
+49661 1
+49661 ENTER :1 FOR TEXT  2 FOR IMAGES
+49661 1
+49662 Whom do u want to send
+49662 a5
+49663 type your message
+49663 h16
+49683 h16
+49763 1
+49763 ENTER :1 FOR TEXT  2 FOR IMAGES
+49764 1
+49764 Whom do u want to send
+49764 a1
+49766 type your message
+49766 h17
+49785 h17
+49865 1
+49865 ENTER :1 FOR TEXT  2 FOR IMAGES
+49865 1
+49865 Whom do u want to send
+49865 a5
+49867 type your message
+49867 h18
+49883 h18
+49966 1
+49967 ENTER :1 FOR TEXT  2 FOR IMAGES
+49967 1
+49967 Whom do u want to send
+49967 a5
+49969 type your message
+49969 h19
+49984 h19
+50068 1
+50072 ENTER :1 FOR TEXT  2 FOR IMAGES
+50072 1
+50073 Whom do u want to send
+50073 a1
+50074 type your message
+50075 h20
+50091 h20
+50173 1
+50174 ENTER :1 FOR TEXT  2 FOR IMAGES
+50174 1
+50175 Whom do u want to send
+50175 a5
+50176 type your message
+50176 h21
+50193 h21
+50275 1
+50276 ENTER :1 FOR TEXT  2 FOR IMAGES
+50276 1
+50276 Whom do u want to send
+50276 a5
+50278 type your message
+50278 h22
+50294 h22
+50377 1
+50377 ENTER :1 FOR TEXT  2 FOR IMAGES
+50378 1
+50378 Whom do u want to send
+50378 a3
+50379 type your message
+50380 h23
+50397 h23
+50479 1
+50479 ENTER :1 FOR TEXT  2 FOR IMAGES
+50479 1
+50480 Whom do u want to send
+50480 a3
+50481 type your message
+50481 h24
+50498 h24
+50580 1
+50581 ENTER :1 FOR TEXT  2 FOR IMAGES
+50581 1
+50581 Whom do u want to send
+50581 a5
+50583 type your message
+50583 h25
+50600 h25
+50682 1
+50683 ENTER :1 FOR TEXT  2 FOR IMAGES
+50683 1
+50683 Whom do u want to send
+50683 a3
+50685 type your message
+50685 h26
+50702 h26
+50784 1
+50784 ENTER :1 FOR TEXT  2 FOR IMAGES
+50785 1
+50785 Whom do u want to send
+50785 a3
+50787 type your message
+50787 h27
+50803 h27
+50885 1
+50887 ENTER :1 FOR TEXT  2 FOR IMAGES
+50887 1
+50887 Whom do u want to send
+50887 a5
+50889 type your message
+50889 h28
+50905 h28
+50988 1
+50988 ENTER :1 FOR TEXT  2 FOR IMAGES
+50989 1
+50989 Whom do u want to send
+50989 a3
+50991 type your message
+50991 h29
+51009 h29
