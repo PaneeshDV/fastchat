@@ -1,6 +1,15 @@
 # Fastchat
 CS251 Project
 
+## Main Features Implemented
+1) Direct Messaging 
+2) Group Chats 
+* Creating and Adding participants
+3) Chat Histories
+4) Unread Messages
+5) Active and Non Active participants
+
+
 ## Socket Programming
 1) We create a listening socket at server,and bind it to port
 2) When the client connects to server he chooses an id and a password.
@@ -35,6 +44,7 @@ CS251 Project
 2) For everyuser we create a seperate table having offline_msgs,chat histories.
 3) When a new group is created we create two tables on having participants and the other having chats.
 4) Function of adding user,finding user,removing user,get_unread_msgs,get_history_user,display_online_users,display_all_grps are implemented
+5) A total of 30 functins were implemented 
 
 ### Contributions
 * **210050048-Paneesh** DataBase, RSA-Encryption, Image sending, Group Chats,
@@ -42,6 +52,5 @@ CS251 Project
 * **210050096-Pranay** DataBase, Chat Histories, Interface, Load-Balance, PPT, Documentation.
  
 ## Multiple Servers-Load Balance
-### Least Connection Method
-1) In this method, the request is forwarded to the server with the fewest active connections
-2) We keep a count on no of connections on each server and we direct each client to a server having least load
+### Round Robin Method:
+1) We 
