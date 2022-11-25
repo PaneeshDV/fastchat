@@ -1,10 +1,23 @@
 # Fastchat
-CS251 Project
+# CS251 Project
+
+## Running the Project:
+1) Databases need to be created initialy
+2) Dont run both server1 and server2 simultaneously because server1 is main server
+* $1 ,$2 , $3 are 3 ports
+* Run python3 server1.py $1 $3 
+* next Run python3 server2.py $2 $3
+* next Run python3 client.py $1 $2
+3) Next instructions will be given in the terminal.
+4) Final commit contains 3 folders
+* Fastchat contains all the implementation
+* Performance analysis on 1st implementation
+* Performance analysis on 2nd implementation
 
 ## Main Features Implemented
 1) Direct Messaging 
 2) Group Chats 
-* Creating and Adding participants
+3) Creating and Adding participants
 3) Chat Histories
 4) Unread Messages
 5) Active and Non Active participants
@@ -47,10 +60,22 @@ CS251 Project
 5) A total of 30 functins were implemented 
 
 ### Contributions
-* **210050048-Paneesh** DataBase, RSA-Encryption, Image sending, Group Chats,
-* **210050069-Nikhil** Socket programming, Direct messages, Group Chats
-* **210050096-Pranay** DataBase, Chat Histories, Interface, Load-Balance, PPT, Documentation.
+* *210050048-Paneesh* DataBase, RSA-Encryption, Image sending, Group Chats ,Chat History, Multiple servers ,Sphinx documentation
+* *210050069-Nikhil* Socket programming, Direct messages, Group Chats, Multiple servers, Interface, Performance Analysis
+* *210050096-Pranay* DataBase, Chat Histories, Interface, Load-Balance, Presentation ,Multiple servers, Performance Analysis
  
 ## Multiple Servers-Load Balance
 ### Round Robin Method:
-1) We 
+#### Implementation 1:
+* Whenever a user logs in,we decide the server to which he should connect by checking the load on both servers.
+* If A and B are 2 clients and are connected to the same server chatting will be similar to single server mechanism.If the user B is not connected to same server server1 sends a message to server2 and server2 sends to B.
+* When user logs out we decrease the load on server.
+* *Advantages*:When more active clients are present on different server,the load will be equally distributed on both servers
+#### Implementation 2:
+* We randomly select the server and assign it.
+#### Implementation 3:
+* We assign server1 and server2 alternatively irrespective of users logging out.
+##### We use a mix of all these implementation so that active clients are equally scattered.
+
+### Performance Analysis:
+* [performance_analysis_pdf](http://shorturl.at/fvR19)
